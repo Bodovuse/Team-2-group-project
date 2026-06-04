@@ -3,6 +3,7 @@
 This records from the microphone, transcribes speech with Vosk, prints the
 transcript, and saves it to transcript.txt.
 """
+#Doubt needs much dev as seems pretty out the box
 
 import json
 import queue
