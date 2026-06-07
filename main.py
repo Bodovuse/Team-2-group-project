@@ -8,10 +8,9 @@ Validate the dataset before analysis.
 Produce basic speaking analytics.
 """
 
-from voskLib import 
+from voskLib import voskMain
 
 if __name__ == "__main__":
     (
-        #call vosk code
-        #record speech
+        voskMain()
     )
