@@ -10,6 +10,11 @@ development
     Validate the dataset before analysis.
     Produce basic speaking analytics.
 """
-#import functions from library
 
-#main code goes here
+from voskLib import 
+
+if __name__ == "__main__":
+    (
+        #call vosk code
+        #record speech
+    )
