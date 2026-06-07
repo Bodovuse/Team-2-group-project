@@ -1,19 +1,19 @@
-## Intialisation
+# Intialisation
 
-# create a virtual environment and activate it
+## create a virtual environment and activate it
 
 Windows
 python -m venv .venv
 .venv\Scripts\activate
 
-# Install requirements
+## Install requirements
 
 pip install -r requirements.txt
 
-# Current code functionality
+## Current code functionality
 main.py is the current code entry point. Calls voskMain which prompts user to speak and records input. Press Ctrl + C to end recording. Outputs to transcript.txt
 
-## Development instructions
+# Development instructions
 
 Please create your own development branch for the feature you are working on. If there is a pre existing branch for the feature use that one. When your fuctions are ready, create a pull request to be reviewed by another team member. It will be merged with the main branch and you can make a development branch again for the next feature.
 
