@@ -10,6 +10,9 @@ Before running:
        ollama pull gemma3
 """
 
+#want input from vosk output currently .txt file
+#output to CSV file
+
 import requests
 
 
@@ -26,7 +29,7 @@ def ask_ollama(prompt):
     response.raise_for_status()
     return response.json()["response"].strip()
 
-
+#want the output to CSV file
 if __name__ == "__main__":
     prompt = (
         "Correct this transcript. Return only the corrected sentence:\n"
