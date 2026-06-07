@@ -9,7 +9,7 @@ Before running:
     3. Download the model:
        ollama pull gemma3
 """
-
+#current - input string output string to terminal
 #want input from vosk output currently .txt file
 #output to CSV file
 
