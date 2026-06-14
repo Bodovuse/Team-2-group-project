@@ -10,7 +10,7 @@ env/
 # Too large to upload to GitHub (1.8GB)
 # Download from: https://alphacephei.com/vosk/models
 # ─────────────────────────────────────────
-model/
+asr/
 
 # ─────────────────────────────────────────
 # Python cache files
@@ -35,7 +35,7 @@ __pycache__/
 # CSV data files
 # Generated when the pipeline runs
 # ─────────────────────────────────────────
-data/
+datasets/
 
 # ─────────────────────────────────────────
 # Mac system files
