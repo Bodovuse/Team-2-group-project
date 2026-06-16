@@ -52,6 +52,10 @@ MODEL3_WHISPER_SIZE = "large-v3"
 MODEL3_WHISPER_DEVICE = "cpu"
 MODEL3_WHISPER_COMPUTE = "int8"
 
+# How long Whisper records per turn in seconds
+# Vosk streams in real time so doesn't need this setting
+WHISPER_TURN_DURATION = 10
+
 
 # ─────────────────────────────────────────
 # Audio recording settings
@@ -68,22 +72,21 @@ CHANNELS = 1
 # Synthetic dataset settings
 # Used for testing and showcasing the pipeline without real recordings
 # Three scenarios to show how models handle different speaking styles
-# meetings1-formal.csv    — formal project meeting
-# meetings2-informal.csv  — casual team catch up
+# meetings1-formal.csv     — formal project meeting
+# meetings2-informal.csv   — casual team catch up
 # meetings3-conference.csv — academic conference style
 # ─────────────────────────────────────────
 CSV_FILE_PATH = "datasets/meetings1-formal.csv"
 
 
 # ─────────────────────────────────────────
-# Live recording datasets
-# Separate CSV files for real recordings from each model
-# These get wiped at the start of each new recording session
-# and appended to during the session
+# Live recording settings
+# Session files are saved to this folder
+# Filename is generated dynamically at session start
+# Format: meeting-{name}-{YYYYMMDD}-{HHMM}.csv
+# Example: meeting-bda-project-20260614-0930.csv
 # ─────────────────────────────────────────
-LIVE_CSV_MODEL1 = "datasets/live/live-model1.csv"
-LIVE_CSV_MODEL2 = "datasets/live/live-model2.csv"
-LIVE_CSV_MODEL3 = "datasets/live/live-model3.csv"
+LIVE_RECORDINGS_PATH = "datasets/live"
 
 
 # ─────────────────────────────────────────
