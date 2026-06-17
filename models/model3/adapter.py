@@ -13,7 +13,6 @@ from config import (
     MODEL3_WHISPER_DEVICE,
     MODEL3_WHISPER_COMPUTE,
     SAMPLE_RATE,
-    WHISPER_TURN_DURATION
 )
 
 
@@ -26,23 +25,20 @@ def load():
     This makes it up to 4x faster than the original Whisper implementation
     while producing identical transcription accuracy.
 
-    The large-v3 model is chosen because it is the most accurate English model
-    in the Whisper family. It handles accents, background noise and natural
-    conversational speech better than the smaller variants.
+    The large-v3 model is the most accurate English model in the Whisper family.
+    It handles accents, background noise and natural conversational speech
+    significantly better than the smaller variants like base or medium.
 
     On first run the model downloads automatically from HuggingFace and caches
-    to the local machine. Subsequent runs load from cache and are much faster.
-    The cache location is managed by HuggingFace Hub automatically.
+    locally — subsequent runs load from cache without re-downloading.
 
     Set to run on CPU with int8 quantisation for cross-platform compatibility.
-    int8 reduces memory usage while keeping accuracy close to float32.
-    No GPU is required — works on Mac, Windows and Linux out of the box.
+    No GPU required — works on Mac, Windows and Linux out of the box.
 
-    The fundamental difference between this and the Vosk adapter is that
-    Whisper cannot stream audio in real time. It must receive a complete
-    audio file and process it as a whole. This means transcribe() records
-    a fixed duration first then processes — unlike Vosk which transcribes
-    as the user speaks.
+    The key difference from Vosk is that Whisper cannot stream in real time.
+    It must receive a complete audio file and process it as a whole.
+    Session.py controls when recording starts and stops — the adapter
+    just records a chunk and transcribes it when told to.
 
     Returns:
         WhisperModel: loaded Faster-Whisper model ready for transcription
@@ -63,73 +59,56 @@ def load():
     return model
 
 
-def transcribe(model):
+def record_chunk(duration):
     """
-    Records audio from the microphone for a fixed duration then transcribes
-    it using the Faster-Whisper large-v3 model.
-
-    Because Whisper processes complete audio files rather than streaming,
-    this function works in two distinct phases:
-
-        Phase 1 — Record:
-            Opens the microphone and records for WHISPER_TURN_DURATION seconds.
-            The duration is configured in config.py and defaults to 10 seconds.
-            sounddevice captures the audio as a numpy float32 array.
-            sd.wait() blocks the thread until recording is complete.
-
-        Phase 2 — Transcribe:
-            The numpy array is converted to int16 and saved to a temporary wav file.
-            Whisper requires a file path rather than raw audio data in memory.
-            The wav file is passed to Whisper which processes it as a whole.
-            All detected speech segments are joined into one complete transcript.
-            The temporary wav file is deleted immediately after transcription
-            to avoid leaving audio files on disk.
-
-    This function only handles transcription — it does not correct the output.
-    Correction is handled separately by pipeline/correct.py after this returns.
-    This separation keeps the adapter focused on one responsibility and allows
-    session.py to call any model's transcribe() function in the same way.
-
-    The trade off vs model2 is that the speaker must speak within the fixed
-    recording window. If they speak for longer than WHISPER_TURN_DURATION
-    seconds the recording cuts off. The duration can be adjusted in config.py.
+    Records audio from the microphone for a fixed duration.
+    Returns the raw audio as a numpy array ready for transcription.
+    No threading — simple blocking record then return.
 
     Args:
-        model: loaded WhisperModel instance returned by load()
+        duration (int): how many seconds to record
 
     Returns:
-        tuple: (raw_text, time_taken)
-               raw_text   — raw transcript string from Faster-Whisper
-               time_taken — total recording duration in seconds
-               returns (None, None) if no speech was detected in the recording
+        numpy array of float32 audio samples
 
-    Time complexity:  O(n log n) for Whisper inference where n is audio duration
-    Space complexity: O(n) for storing audio samples in memory before transcription
+    Time complexity:  O(n) where n is the duration in seconds
+    Space complexity: O(n) for storing the audio samples in memory
     """
-    from datetime import datetime
-
-    print(f"  Recording for {WHISPER_TURN_DURATION} seconds — speak now!")
-
-    start_time = datetime.now()
-
-    # Record audio from the microphone for the configured duration
-    # sd.rec() is non-blocking — sd.wait() blocks until recording finishes
     audio = sd.rec(
-        int(WHISPER_TURN_DURATION * SAMPLE_RATE),
+        int(duration * SAMPLE_RATE),
         samplerate=SAMPLE_RATE,
         channels=1,
         dtype="float32"
     )
     sd.wait()
+    return audio.flatten()
 
-    time_taken = (datetime.now() - start_time).total_seconds()
-    print("  Recording complete — transcribing...")
 
-    # Flatten from 2D array (samples x channels) to 1D for processing
-    audio = audio.flatten()
+def transcribe(model, audio):
+    """
+    Transcribes a numpy audio array using Faster-Whisper.
 
-    # Save audio to a temporary wav file because Whisper requires
-    # a file path as input rather than raw audio data in memory
+    Takes pre-recorded audio and passes it to Whisper for transcription.
+    The audio is saved to a temporary wav file because Whisper requires
+    a file path rather than raw audio data in memory.
+    The temporary file is deleted immediately after transcription.
+
+    This function is intentionally simple — it just transcribes what it receives.
+    All recording control logic lives in session.py which decides when to
+    record and when to stop. This keeps the adapter focused on one thing only.
+
+    Args:
+        model: loaded WhisperModel instance returned by load()
+        audio: numpy float32 array of recorded audio samples
+
+    Returns:
+        str: raw transcript from Faster-Whisper
+             returns None if nothing was detected
+
+    Time complexity:  O(n log n) for Whisper inference where n is audio duration
+    Space complexity: O(n) for the temporary wav file
+    """
+    # Save to a temporary wav file — Whisper requires a file path not raw data
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp_path = tmp.name
 
@@ -137,24 +116,15 @@ def transcribe(model):
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(SAMPLE_RATE)
-        # Convert float32 samples to int16 — wav format requires int16
-        # Multiply by 32767 to scale from -1.0/1.0 range to int16 range
+        # Convert float32 to int16 — wav format requires int16
         audio_int16 = (audio * 32767).astype(np.int16)
         wf.writeframes(audio_int16.tobytes())
 
-    # Transcribe the wav file — language="en" forces English detection
-    # which improves accuracy for English speech over auto-detection
+    # Transcribe — language="en" forces English for better accuracy
     segments, _ = model.transcribe(tmp_path, language="en")
-
-    # Whisper returns multiple segments — join them into one complete transcript
     raw_text = " ".join(segment.text.strip() for segment in segments).strip()
 
-    # Delete the temporary wav file immediately — no audio stored on disk
+    # Delete the temporary file immediately
     os.unlink(tmp_path)
 
-    if raw_text:
-        return raw_text, time_taken
-    else:
-        # Nothing detected — session.py will handle prompting the user to try again
-        print("  Nothing detected — please try again.")
-        return None, None
+    return raw_text if raw_text else None

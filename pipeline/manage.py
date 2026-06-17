@@ -33,14 +33,12 @@ def get_all_sessions():
         if filename.endswith(".csv") and filename.startswith("meeting-"):
             path = os.path.join(LIVE_RECORDINGS_PATH, filename)
 
-            # Count data rows excluding the header
             try:
                 with open(path, newline="", encoding="utf-8") as f:
                     rows = sum(1 for row in csv.DictReader(f))
             except Exception:
                 rows = 0
 
-            # Get file creation time for display
             created = os.path.getmtime(path)
             date_str = datetime.fromtimestamp(created).strftime("%Y-%m-%d %H:%M")
 
@@ -51,7 +49,6 @@ def get_all_sessions():
                 "date": date_str
             })
 
-    # Sort by most recent first
     sessions.sort(key=lambda x: x["date"], reverse=True)
     return sessions
 
@@ -81,7 +78,6 @@ def display_sessions(sessions):
     print(f"  {'─'*5} {'─'*42} {'─'*8} {'─'*16}")
 
     for i, session in enumerate(sessions, 1):
-        # Truncate long filenames for clean display
         name = session["filename"]
         if len(name) > 40:
             name = name[:37] + "..."
@@ -92,10 +88,13 @@ def view_session_summary(sessions):
     """
     Shows a detailed summary of a chosen session.
     Displays speaker breakdown, total rows, model used and recording date.
-    Counts how many turns each speaker had in the session.
+    The user can type m at any point to return to the main menu.
 
     Args:
         sessions (list): list of session dicts from get_all_sessions()
+
+    Returns:
+        bool: True to stay in manage menu, False to return to main menu
 
     Time complexity:  O(n) where n is the number of rows in the chosen session
     Space complexity: O(k) where k is the number of unique speakers
@@ -103,22 +102,24 @@ def view_session_summary(sessions):
     display_sessions(sessions)
 
     if not sessions:
-        return
+        return True
 
-    choice = input("\nWhich session to view? (enter number): ").strip()
+    choice = input("\nWhich session to view? (number or m for main menu): ").strip().lower()
+
+    if choice == "m":
+        return False
 
     try:
         index = int(choice) - 1
         if index < 0 or index >= len(sessions):
             print("Invalid selection.")
-            return
+            return True
     except ValueError:
         print("Please enter a valid number.")
-        return
+        return True
 
     session = sessions[index]
 
-    # Read session data for detailed summary
     speaker_turns = {}
     model_used = "unknown"
 
@@ -131,7 +132,7 @@ def view_session_summary(sessions):
                 model_used = row.get("model_used", "unknown")
     except Exception:
         print("Error reading session file.")
-        return
+        return True
 
     print("\n" + "=" * 65)
     print(f"  SESSION SUMMARY")
@@ -144,12 +145,18 @@ def view_session_summary(sessions):
     for speaker, turns in sorted(speaker_turns.items()):
         print(f"    {speaker:<20} {turns} turns")
 
+    back = input("\n  Press Enter to go back or m for main menu: ").strip().lower()
+    if back == "m":
+        return False
+    return True
+
 
 def delete_sessions(sessions):
     """
     Deletes one or more session files chosen by the user.
     The user can enter a single number, a comma separated list,
-    or 'all' to delete everything.
+    or all to delete everything.
+    Type m at any point to cancel and return to the main menu.
 
     A confirmation step shows exactly what will be deleted before
     anything is removed — preventing accidental data loss.
@@ -158,19 +165,24 @@ def delete_sessions(sessions):
     Args:
         sessions (list): list of session dicts from get_all_sessions()
 
+    Returns:
+        bool: True to stay in manage menu, False to return to main menu
+
     Time complexity:  O(k) where k is the number of sessions selected
     Space complexity: O(k) for storing selected session indices
     """
     display_sessions(sessions)
 
     if not sessions:
-        return
+        return True
 
     print("\nSelect sessions to delete.")
-    print("Examples: 1  or  1,2,3  or  all")
+    print("Examples: 1  or  1,2,3  or  all  or  m for main menu")
     choice = input("\nEnter selection: ").strip().lower()
 
-    # Determine which sessions to delete
+    if choice == "m":
+        return False
+
     to_delete = []
 
     if choice == "all":
@@ -185,24 +197,25 @@ def delete_sessions(sessions):
                     print(f"  Skipping invalid selection: {i + 1}")
         except ValueError:
             print("Invalid input — please enter numbers separated by commas.")
-            return
+            return True
 
     if not to_delete:
         print("No valid sessions selected.")
-        return
+        return True
 
-    # Show confirmation before deleting anything
     print("\nYou are about to delete:")
     for session in to_delete:
         print(f"  - {session['filename']} ({session['rows']} rows)")
 
-    confirm = input("\nAre you sure? (y/n): ").strip().lower()
+    confirm = input("\nAre you sure? (y / n / m for main menu): ").strip().lower()
+
+    if confirm == "m":
+        return False
 
     if confirm != "y":
         print("Deletion cancelled.")
-        return
+        return True
 
-    # Delete the selected files
     deleted = 0
     for session in to_delete:
         try:
@@ -214,7 +227,6 @@ def delete_sessions(sessions):
 
     print(f"\n{deleted} session(s) deleted successfully.")
 
-    # Show remaining sessions automatically
     remaining = get_all_sessions()
     if remaining:
         print("\nRemaining sessions:")
@@ -222,16 +234,20 @@ def delete_sessions(sessions):
     else:
         print("\nNo sessions remaining.")
 
+    return True
+
 
 def rename_session(sessions):
     """
     Renames a chosen session file.
-    The user picks a session by number and enters a new name.
-    The timestamp is preserved from the original filename to maintain
-    chronological ordering — only the name part changes.
+    The timestamp is preserved from the original filename.
+    Type m at any point to cancel and return to the main menu.
 
     Args:
         sessions (list): list of session dicts from get_all_sessions()
+
+    Returns:
+        bool: True to stay in manage menu, False to return to main menu
 
     Time complexity:  O(1)
     Space complexity: O(1)
@@ -239,31 +255,36 @@ def rename_session(sessions):
     display_sessions(sessions)
 
     if not sessions:
-        return
+        return True
 
-    choice = input("\nWhich session to rename? (enter number): ").strip()
+    choice = input("\nWhich session to rename? (number or m for main menu): ").strip().lower()
+
+    if choice == "m":
+        return False
 
     try:
         index = int(choice) - 1
         if index < 0 or index >= len(sessions):
             print("Invalid selection.")
-            return
+            return True
     except ValueError:
         print("Please enter a valid number.")
-        return
+        return True
 
     session = sessions[index]
 
-    new_name = input("Enter new name: ").strip().lower().replace(" ", "-")
+    new_name = input("Enter new name (or m for main menu): ").strip().lower()
+
+    if new_name == "m":
+        return False
+
+    new_name = new_name.replace(" ", "-")
+
     while not new_name:
         print("Name cannot be empty.")
         new_name = input("Enter new name: ").strip().lower().replace(" ", "-")
 
-    # Extract the timestamp from the original filename to preserve it
-    # Original format: meeting-{name}-{YYYYMMDD}-{HHMM}.csv
     parts = session["filename"].replace(".csv", "").split("-")
-
-    # Timestamp is always the last two parts — date and time
     timestamp = f"{parts[-2]}-{parts[-1]}"
     new_filename = f"meeting-{new_name}-{timestamp}.csv"
     new_path = os.path.join(LIVE_RECORDINGS_PATH, new_filename)
@@ -274,12 +295,15 @@ def rename_session(sessions):
     except Exception as e:
         print(f"Error renaming file: {e}")
 
+    return True
+
 
 def manage_recordings():
     """
     Main recording management menu.
     Allows the user to view, delete and rename session files.
-    Loops until the user chooses to go back to the main menu.
+    Type m at any prompt to return to the main menu immediately.
+    Type b at the main manage menu to go back to the main menu.
 
     Time complexity:  O(n) where n is the number of sessions
     Space complexity: O(n) for storing session metadata
@@ -298,17 +322,24 @@ def manage_recordings():
         print("  D — Delete session(s)")
         print("  R — Rename a session")
         print("  B — Back to main menu")
+        print("  M — Main menu")
         print()
 
         choice = input("Enter choice: ").strip().upper()
 
         if choice == "V":
-            view_session_summary(sessions)
+            stay = view_session_summary(sessions)
+            if not stay:
+                break
         elif choice == "D":
-            delete_sessions(sessions)
+            stay = delete_sessions(sessions)
+            if not stay:
+                break
         elif choice == "R":
-            rename_session(sessions)
-        elif choice == "B":
+            stay = rename_session(sessions)
+            if not stay:
+                break
+        elif choice in ("B", "M"):
             break
         else:
-            print("Please enter V, D, R or B.")
+            print("Please enter V, D, R, B or M.")
