@@ -20,7 +20,7 @@ MODEL_NAME = "gemma3"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
 
-def ask_ollama(prompt):
+def askOllama(prompt):
     response = requests.post(
         OLLAMA_URL,
         json={"model": MODEL_NAME, "prompt": prompt, "stream": False},
@@ -30,11 +30,11 @@ def ask_ollama(prompt):
     return response.json()["response"].strip()
 
 #want the output to CSV file
-if __name__ == "__main__":
+def ollamaMain(prompt):
     prompt = (
         "Correct this transcript. Return only the corrected sentence:\n"
         "can we target students first"
     )
 
-    output = ask_ollama(prompt)
+    output = askOllama(prompt)
     print(output)

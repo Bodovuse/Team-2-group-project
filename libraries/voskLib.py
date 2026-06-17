@@ -14,7 +14,7 @@ from vosk import Model, KaldiRecognizer
 
 MODEL_PATH = "vosk-model-en-us-0.22-lgraph"
 SAMPLE_RATE = 16000
-OUTPUT_FILE = "transcript.txt"
+OUTPUT_FILE = "data/transcript.txt"
 
 q = queue.Queue()
 
