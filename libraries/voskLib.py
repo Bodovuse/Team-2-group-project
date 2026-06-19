@@ -10,14 +10,28 @@ import queue
 from datetime import datetime
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
+import pandas as pd
 
 
 MODEL_PATH = "vosk-model-en-us-0.22-lgraph"
 SAMPLE_RATE = 16000
-OUTPUT_FILE = "data/transcript.txt"
+OUTPUT_FILE = "data/transcript.csv"
+CSV_COLUMNS = [
+    "timestamp",        
+    "raw_text",    
+    "corrected_text",             
+    "time_taken_sec",   
+    "question_flag",    
+    "num_words",        
+    "text_size_chars",  
+    "speech_rate_wps",  
+    "speaker_turn_id",  
+    "sentiment",        
+    "model_used",       
+    "accuracy_score"    
+]
 
 q = queue.Queue()
-
 
 def callback(indata, frames, time, status):
     if status:
@@ -65,7 +79,7 @@ def voskMain():
     timestamp = datetime.now().isoformat()
 
     with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
-        f.write(f"\n--- {timestamp} ---\n")
+        f.write(f"\n{timestamp}")
         f.write(full_text.strip() + "\n")
 
     print(f"\nSaved to {OUTPUT_FILE}")
