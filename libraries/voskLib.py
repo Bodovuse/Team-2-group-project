@@ -15,7 +15,7 @@ import pandas as pd
 
 MODEL_PATH = "vosk-model-en-us-0.22-lgraph"
 SAMPLE_RATE = 16000
-OUTPUT_FILE = "data/transcript.csv"
+OUTPUT_FILE = "data/transcript.txt"
 CSV_COLUMNS = [
     "timestamp",        
     "raw_text",    

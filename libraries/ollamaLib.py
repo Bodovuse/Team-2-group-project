@@ -19,11 +19,12 @@ import requests
 #CHANGE TO PASSING OLLAMA A FILE AND A PROMPT
 MODEL_NAME = "gemma3"
 OLLAMA_URL = "http://localhost:11434/api/generate"
+DATA = "data/transcript.txt"
 
 def askOllama(prompt):
     response = requests.post(
         OLLAMA_URL,
-        json={"model": MODEL_NAME, "prompt": prompt, "stream": False},
+        json={"model": MODEL_NAME, "prompt": prompt, "data": data, "stream": False},
         timeout=120,
     )
     response.raise_for_status()
@@ -38,9 +39,12 @@ def ollamaMain():
     #     for row in reader:
     #         rows.append(row)
 
-    data = "data/transcript.txt"
+    #data = "data/transcript.txt"
     #data = askOllama(rows)
-    prompt = f'take this input {data}, and correct the raw input and return only corrected text' 
+    prompt = (
+        "Correct this transcript. Return only the corrected sentence:\n"
+        "$DATA'data/transcript.txt'"
+    ) 
     output = askOllama(prompt)
     print("Ollama query sucsessful: ", output)
     
