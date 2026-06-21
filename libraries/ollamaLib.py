@@ -15,36 +15,46 @@ Before running:
 import csv
 import requests
 #import ollama
+from langchain_ollama import OllamaLLM
+from langchain_experimental.agents.agent_toolkits import create_csv_agent
 
 #CHANGE TO PASSING OLLAMA A FILE AND A PROMPT
 MODEL_NAME = "gemma3"
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DATA = "data/transcript.txt"
-
-def askOllama(prompt):
-    response = requests.post(
-        OLLAMA_URL,
-        json={"model": MODEL_NAME, "prompt": prompt, "data": data, "stream": False},
-        timeout=120,
-    )
-    response.raise_for_status()
-    return response.json()["response"].strip()
+DATA = "data/transcript.csv"
 
 def ollamaMain():
+    llm = OllamaLLM(model = MODEL_NAME, temperature=0.5)
+    agent = create_csv_agent(llm, DATA, verbose = True, allow_dangerous_code = True)
+    agent.handle_parsing_errors = True
+    agent.invoke("Correct this transcript. correct the raw sentence and put them in the column called corrected sentence")
 
-    rows = []
+# def askOllama(prompt):
+#     response = requests.post(
+#         OLLAMA_URL,
+#         json={"model": MODEL_NAME, "prompt": prompt,  "stream": False},
+#         timeout=120,
+#     )
+#     response.raise_for_status()
+#     return response.json()["response"].strip()
 
-    # with open('data/transcript.csv', 'rt') as f:
-    #     reader = csv.reader(f)
-    #     for row in reader:
-    #         rows.append(row)
+# def ollamaMain():
 
-    #data = "data/transcript.txt"
-    #data = askOllama(rows)
-    prompt = (
-        "Correct this transcript. Return only the corrected sentence:\n"
-        "$DATA'data/transcript.txt'"
-    ) 
-    output = askOllama(prompt)
-    print("Ollama query sucsessful: ", output)
+#     #rows = []
+
+#     # with open('data/transcript.csv', 'rt') as f:
+#     #     reader = csv.reader(f)
+#     #     for row in reader:
+#     #         rows.append(row)
+
+#     #data = "data/transcript.txt"
+#     #data = askOllama(rows)
+#     prompt = (
+#         "Correct this transcript. correct the raw text and add to a column called corrected text:\n"
+#         "$DATA'data/transcript.csv'"
+#     ) 
+#     output = askOllama(prompt)
+#     print("Ollama query sucsessful: ", output)
+
+
     
