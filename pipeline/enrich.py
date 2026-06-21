@@ -5,7 +5,8 @@ from textblob import TextBlob
 from difflib import SequenceMatcher
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import CSV_FILE_PATH, CSV_COLUMNS
+import config
+from config import CSV_COLUMNS
 
 
 def calculate_question_flag(text):
@@ -74,6 +75,9 @@ def enrich_csv():
     Reads the CSV file and calculates all derived columns using
     Python logic only — no AI involved at this stage.
 
+    Reads from config.CSV_FILE_PATH dynamically so it always points
+    to the correct file — whether synthetic or live session data.
+
     Columns calculated:
         question_flag    — True if text ends with ?
         num_words        — word count of corrected text
@@ -86,12 +90,12 @@ def enrich_csv():
     Time complexity:  O(n) where n is the number of rows
     Space complexity: O(n) to store all rows in memory
     """
-    if not os.path.exists(CSV_FILE_PATH):
-        print(f"Error: CSV file not found at '{CSV_FILE_PATH}'")
+    if not os.path.exists(config.CSV_FILE_PATH):
+        print(f"Error: CSV file not found at '{config.CSV_FILE_PATH}'")
         return
 
     rows = []
-    with open(CSV_FILE_PATH, newline="", encoding="utf-8") as f:
+    with open(config.CSV_FILE_PATH, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             rows.append(row)
@@ -119,7 +123,7 @@ def enrich_csv():
     rows = calculate_speaker_turn_id(rows)
 
     # Write enriched rows back to CSV
-    with open(CSV_FILE_PATH, "w", newline="", encoding="utf-8") as f:
+    with open(config.CSV_FILE_PATH, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         writer.writerows(rows)

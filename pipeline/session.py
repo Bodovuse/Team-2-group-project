@@ -178,11 +178,11 @@ def run_session(model_choice, adapter, model_used):
     Claude corrects, and the result is shown on screen and saved to CSV in real time.
 
     The recording loop runs sentence by sentence. After each sentence is captured
-    and saved, a prompt appears giving the user three options:
+    and saved, a prompt appears giving the user four options:
         Enter — continue recording with the current speaker
         s     — switch to the next registered speaker
-        q     — quit the program entirely
         m     — end the session and return to the main menu
+        q     — end the session, run enrichment and validation, then quit
 
     Commands only work at the prompt — not during recording. This is because
     Vosk's audio processing blocks the thread while listening. This is a known
@@ -216,16 +216,19 @@ def run_session(model_choice, adapter, model_used):
             break
         print("Session name cannot be empty.")
 
+    # ── Speaker registration ───────────────────────────────────
+    # Speakers are registered before the CSV is created
+    # This prevents empty CSV files being left behind if the user quits
+    speakers = register_speakers()
+    if speakers is None:
+        return None
+
+    # CSV is only created after speakers are confirmed
     csv_path = generate_session_filename(session_name)
     initialise_csv(csv_path)
 
     print(f"\nSession file: {os.path.basename(csv_path)}")
     print(f"Saved to:     {csv_path}")
-
-    # ── Speaker registration ───────────────────────────────────
-    speakers = register_speakers()
-    if speakers is None:
-        return None
 
     speaker_index = 0
 
@@ -245,11 +248,12 @@ def run_session(model_choice, adapter, model_used):
      Enter — continue recording with the current speaker
      s     — switch to the next registered speaker
      m     — end the session and return to the main menu
-     q     — quit the program entirely
+     q     — end the session and quit the program
    Commands only work at the prompt, not during recording.
 """)
 
     stop = False
+    quit_after = False
 
     while not stop:
         print(f"🎙  Listening... [{speakers[speaker_index]}]")
@@ -283,12 +287,12 @@ def run_session(model_choice, adapter, model_used):
             )
             print(f"  Saved to CSV ✓\n")
 
-        # Prompt after each sentence
+        # Prompt after each sentence giving the user full control
         cmd = input(f"  [{speakers[speaker_index]}] > Enter to continue / s to switch / m for main menu / q to quit\n  > ").strip().lower()
         if cmd == "q":
-            print("\nGoodbye!")
-            sys.exit(0)
-        elif cmd in ("m",):
+            stop = True
+            quit_after = True
+        elif cmd == "m":
             stop = True
         elif cmd == "s":
             speaker_index = (speaker_index + 1) % len(speakers)
@@ -322,5 +326,10 @@ def run_session(model_choice, adapter, model_used):
     else:
         print("\nPipeline complete — validation found issues.")
         print("Fix the issues above before running analytics.")
+
+    # If user pressed q — quit after enrichment and validation complete
+    if quit_after:
+        print("\nGoodbye!")
+        sys.exit(0)
 
     return csv_path

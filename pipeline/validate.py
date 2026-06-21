@@ -4,7 +4,8 @@ import sys
 from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import CSV_FILE_PATH, CSV_COLUMNS, MIN_ROWS_REQUIRED
+import config
+from config import CSV_COLUMNS, MIN_ROWS_REQUIRED
 
 
 def validate_csv():
@@ -13,6 +14,9 @@ def validate_csv():
 
     Checks the CSV file is complete and correct before analytics runs.
     Prints clear error messages for any issues found.
+
+    Reads from config.CSV_FILE_PATH dynamically so it always points
+    to the correct file — whether synthetic or live session data.
 
     Checks performed:
         - CSV file exists
@@ -34,12 +38,12 @@ def validate_csv():
     errors = []
 
     # Check file exists
-    if not os.path.exists(CSV_FILE_PATH):
-        print(f"Validation failed: CSV file not found at '{CSV_FILE_PATH}'")
+    if not os.path.exists(config.CSV_FILE_PATH):
+        print(f"Validation failed: CSV file not found at '{config.CSV_FILE_PATH}'")
         return False
 
     rows = []
-    with open(CSV_FILE_PATH, newline="", encoding="utf-8") as f:
+    with open(config.CSV_FILE_PATH, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             rows.append(row)
