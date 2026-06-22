@@ -22,6 +22,7 @@ ollama run gemma3\
 
 ## Current code functionality
 main.py is the current code entry point. \Calls voskMain which prompts user to speak and records input. \Press Ctrl + C to end recording. \Outputs to transcript.csv
+\ ollamaMain is called and the csv file is then passed to Ollama which corrects the grammar and saves to corrected_sentence column \
 
 # Development instructions
 
