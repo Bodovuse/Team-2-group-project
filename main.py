@@ -15,7 +15,7 @@ from libraries.ollamaLib import ollamaMain
 
 if __name__ == "__main__":
     (
-        #voskMain(),
+        voskMain(),
         ollamaMain()
     )
     

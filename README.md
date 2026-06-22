@@ -11,13 +11,13 @@ python -m venv .venv\
 pip install -r requirements.txt\
 
 # Run
-python main.py\
 Install Ollama from https://ollama.com/download\
 Open the Ollama app, or make sure the local Ollama server is running at http://localhost:11434\
 Open new terminal\
 Download the model:ollama pull gemma3\
 ollama serve\
 ollama run gemma3\
+python main.py
 
 
 ## Current code functionality
