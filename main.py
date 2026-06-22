@@ -10,9 +10,12 @@ Validate the dataset before analysis.
 Produce basic speaking analytics.
 """
 
-from voskLib import voskMain
+from libraries.voskLib import voskMain
+from libraries.ollamaLib import ollamaMain
 
 if __name__ == "__main__":
     (
-        voskMain()
+        #voskMain(),
+        ollamaMain()
     )
+    

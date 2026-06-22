@@ -3,21 +3,28 @@
 This records from the microphone, transcribes speech with Vosk, prints the
 transcript, and saves it to transcript.txt.
 """
-#Doubt needs much dev as seems pretty out the box
 
 import json
 import queue
 from datetime import datetime
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
+import pandas as pd
+import csv
 
 
 MODEL_PATH = "vosk-model-en-us-0.22-lgraph"
 SAMPLE_RATE = 16000
-OUTPUT_FILE = "transcript.txt"
+OUTPUT_FILE = "data/transcript.csv"
+CSV_COLUMNS = [
+    "timestamp",        
+    "raw_sentence",    
+    "corrected_sentence",             
+    "time_taken_sec",     
+    "accuracy_score"    
+]
 
 q = queue.Queue()
-
 
 def callback(indata, frames, time, status):
     if status:
@@ -64,9 +71,18 @@ def voskMain():
 
     timestamp = datetime.now().isoformat()
 
-    with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
-        f.write(f"\n--- {timestamp} ---\n")
-        f.write(full_text.strip() + "\n")
+    with open(OUTPUT_FILE, "r") as inFile:
+        rows = inFile.readlines()
 
+    with open(OUTPUT_FILE, "a", newline = "\n", encoding="utf-8") as dataFrame:
+
+        
+
+        writer = csv.writer(dataFrame)
+        writer.writerow([timestamp, full_text.strip()])
+        # dataFrame.write(f"\n{timestamp}\r")
+        # dataFrame.write(full_text.strip())
+        # dataFrame.writelines(rows)
+        
     print(f"\nSaved to {OUTPUT_FILE}")
     print("Transcript:", full_text.strip())
